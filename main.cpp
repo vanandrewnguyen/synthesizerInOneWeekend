@@ -1,7 +1,9 @@
 #include <iostream>
+#include "src/noiseMaker.h"
+#include "src/synthEngine.h"
 
 int main() {
-    std::cout << "Hello World!\n";
+    SynthEngine engine = SynthEngine();
 
     return 0;
 }
