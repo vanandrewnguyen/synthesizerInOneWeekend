@@ -20,6 +20,8 @@ public:
 SynthEngine::SynthEngine()
 	: m_devices(NoiseMaker<short>::Enumerate()),
 	  m_sound(m_devices[0]) {
+	std::cout << "Starting engine..." << std::endl;
+	
 	for (std::wstring d : m_devices) {
 		std::wcout << "Found Output Device: " << d << std::endl;
 	}

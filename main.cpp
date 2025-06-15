@@ -3,7 +3,7 @@
 #include "src/synthEngine.h"
 
 int main() {
-    SynthEngine engine = SynthEngine();
+    std::unique_ptr<SynthEngine> engine = std::make_unique<SynthEngine>();
 
     return 0;
 }
