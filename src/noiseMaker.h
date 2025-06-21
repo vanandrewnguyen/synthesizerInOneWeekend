@@ -205,6 +205,7 @@ private:
 
 	unsigned int m_nSampleRate;
 	unsigned int m_nChannels;
+	// Blocks are how fine you split each wavelength up - higher no. blocks means close to wavelength approximation (see derivative lim approx)
 	unsigned int m_nBlockCount;
 	unsigned int m_nBlockSamples;
 	unsigned int m_nBlockCurrent;
