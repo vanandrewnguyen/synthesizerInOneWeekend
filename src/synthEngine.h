@@ -8,17 +8,45 @@
 #include "noiseMaker.h"
 
 namespace noiseSpace {
+	double octaveBaseFreq = 110.0;
+	double root = std::pow(2.0, 1.0 / 12.0);
 	std::atomic<double> frequency = 440.0;
-	std::atomic<double> amplitude = 0.5;
+	std::atomic<double> amplitude = 0.2;
 
-	double createSine(double a_time) {
-		// 440 Hz
-		return amplitude * sin(frequency * 2 * Utility::pi * a_time);
+	double osc(double a_hertz, double a_time, int a_type) {
+		// Avoid large amplitudes with low frequencies
+		switch (a_type) {
+		case 0:
+			// Sine
+			return sin(Utility::freqToVel(frequency) * a_time);
+		case 1:
+			// Square
+			return (sin(Utility::freqToVel(frequency) * a_time)) > 0.0 ? 1.0 : -1.0;
+		case 2:
+			// Triangle
+			return asin(sin(Utility::freqToVel(frequency) * a_time)) * 2.0 / Utility::pi;
+		case 3: {
+			// Saw (using sum of sine lim inf, soft)
+			double output = 0.0;
+			for (double i = 1.0; i < 100.0; i++) {
+				output += (sin(i * Utility::freqToVel(a_hertz) * a_time)) / i;
+			}
+			return output * (2.0 / Utility::pi);
+		}
+		case 4:
+			// Saw (using mod)
+			return (2.0 / Utility::pi) * (a_hertz * Utility::pi * std::fmod(a_time, 1.0 / a_hertz) - (Utility::pi / 2.0));
+		case 5:
+			// Rand Noise
+			return Utility::randomDouble(); // freq does not affect... so plays constantly
+		default:
+			return 0.0;
+		}
 	}
 
-	double createSquare(double a_time) {
-		double wave = createSine(a_time) / amplitude;
-		return (wave > 0.0) ? amplitude.load() : -amplitude.load();
+	double makeNoise(double a_time) {
+		double output = osc(frequency, a_time, 3);
+		return output * amplitude;
 	}
 }
 
@@ -39,17 +67,23 @@ SynthEngine::SynthEngine()
 	for (std::wstring d : m_devices) {
 		std::wcout << "Found Output Device: " << d << std::endl;
 	}
+	std::wcout << endl <<
+		"|   |   |   |   |   | |   |   |   |   | |   | |   |   |   |" << endl <<
+		"|   | S |   |   | F | | G |   |   | J | | K | | L |   |   |" << endl <<
+		"|   |___|   |   |___| |___|   |   |___| |___| |___|   |   |__" << endl <<
+		"|     |     |     |     |     |     |     |     |     |     |" << endl <<
+		"|  Z  |  X  |  C  |  V  |  B  |  N  |  M  |  ,  |  .  |  /  |" << endl <<
+		"|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|" << endl << endl;
 
-	m_sound.SetUserFunction(noiseSpace::createSine);
+	m_sound.SetUserFunction(noiseSpace::makeNoise);
 
 	// Create keyboard piano of 2 octaves
-	double octaveBaseFreq = 110.0;
-	double root = std::pow(2.0, 1.0 / 12.0);
 	while (1) {
 		bool keyPressed = false;
 		for (int i = 0; i < 15; i++) {
 			if (GetAsyncKeyState((unsigned char)("ZSXCFVGBNJMK\xbcL\xbe"[i])) & 0x8000) {
-				noiseSpace::frequency = octaveBaseFreq * std::pow(root, i);
+				noiseSpace::frequency = noiseSpace::octaveBaseFreq * std::pow(noiseSpace::root, i);
+				wcout << "\rNote On : " << m_sound.GetTime() << "s " << noiseSpace::frequency << "Hz";
 				keyPressed = true;
 			}
 		}

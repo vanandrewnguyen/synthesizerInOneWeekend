@@ -134,6 +134,8 @@
     <ClInclude Include="noiseMaker.h" />
     <ClInclude Include="src\synthEngine.h" />
     <ClInclude Include="src\utils.h" />
+    <ClInclude Include="src\vec2.h" />
+    <ClInclude Include="src\vec3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
