@@ -132,6 +132,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="noiseMaker.h" />
+    <ClInclude Include="src\envelope.h" />
+    <ClInclude Include="src\instrument.h" />
     <ClInclude Include="src\synthEngine.h" />
     <ClInclude Include="src\utils.h" />
     <ClInclude Include="src\vec2.h" />

@@ -41,5 +41,11 @@
     <ClInclude Include="src\vec2.h">
       <Filter>Source Files\src</Filter>
     </ClInclude>
+    <ClInclude Include="src\envelope.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\instrument.h">
+      <Filter>Source Files\src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -27,12 +27,12 @@ namespace Utility {
 		return 2.0 * (double)rand() / ((double)RAND_MAX) - 1.0;
 	}
 
-	double randomDouble(double min, double max) {
-		return min + (max - min) * randomDouble();
+	double randomDouble(double aMin, double aMax) {
+		return aMin + (aMax - aMin) * randomDouble();
 	}
 
-	int randomInt(int min, int max) {
-		int randNum = rand() % (max - min + 1) + min;
+	int randomInt(int aMin, int aMax) {
+		int randNum = rand() % (aMax - aMin + 1) + aMin;
 		return randNum;
 	}
 
@@ -66,21 +66,83 @@ namespace Utility {
 	/////////////////
 	// Math
 	/////////////////
-	double clamp(double x, double min, double max) {
-		if (x < min) return min;
-		if (x > max) return max;
+	double clamp(double x, double aMin, double aMax) {
+		if (x < aMin) return aMin;
+		if (x > aMax) return aMax;
 		return x;
 	}
 
-	int clamp(int x, int min, int max) {
-		if (x < min) return min;
-		if (x > max) return max;
+	int clamp(int x, int aMin, int aMax) {
+		if (x < aMin) return aMin;
+		if (x > aMax) return aMax;
 		return x;
 	}
 
 	// Convert freq (Hz) to angular velocity
-	double freqToVel(double a_hertz) {
-		return a_hertz * 2.0 * pi;
+	double freqToVel(double aHertz) {
+		return aHertz * 2.0 * pi;
+	}
+
+	// Scale to freq convert
+	const int SCALE_DEFAULT = 0;
+	double scale(const int aNoteId, const int aScaleId = SCALE_DEFAULT) {
+		switch (aScaleId) {
+		case SCALE_DEFAULT: default:
+			return 256 * std::pow(1.0594630943592952645618252949463, aNoteId);
+		}
+	}
+}
+
+
+namespace Synth {
+	enum WaveForm {
+		OSC_SINE = 0,
+		OSC_SQUARE,
+		OSC_TRIANGLE,
+		OSC_SAW_LIM,
+		OSC_SAW,
+		OSC_NOISE,
+	};
+
+	double osc(double aTime,
+		double aHertz,
+		WaveForm a_type = OSC_SINE,
+		double aLFOHertz = 0.0,
+		double aLFOAmp = 0.0,
+		double aCustom = 50.0) {
+		// Avoid large amplitudes with low frequencies
+		// LFO
+		double freq = Utility::freqToVel(aHertz) * aTime + aLFOAmp * aHertz * sin(Utility::freqToVel(aLFOHertz) * aTime);
+
+		switch (a_type) {
+		case OSC_SINE:
+			return sin(freq);
+
+		case OSC_SQUARE:
+			return (sin(freq) > 0.0) ? 1.0 : -1.0;
+
+		case OSC_TRIANGLE:
+			return asin(freq) * 2.0 / Utility::pi;
+
+		case OSC_SAW_LIM: {
+			// Saw (using sum of sine lim inf, soft)
+			double output = 0.0;
+			for (double i = 1.0; i < 100.0; i++) {
+				output += (sin(i * freq)) / i;
+			}
+			return output * (2.0 / Utility::pi);
+		}
+
+		case OSC_SAW:
+			// Saw (using mod)
+			return (2.0 / Utility::pi) * (aHertz * Utility::pi * std::fmod(aTime, 1.0 / aHertz) - (Utility::pi / 2.0));
+
+		case OSC_NOISE:
+			return Utility::randomDouble(); // freq does not affect... so plays constantly
+
+		default:
+			return 0.0;
+		}
 	}
 }
 
