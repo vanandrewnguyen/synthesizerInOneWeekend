@@ -8,6 +8,15 @@
 #include "utils.h"
 #include "noiseMaker.h"
 
+enum WaveForm {
+	SINE = 0,
+	SQUARE,
+	TRIANGLE,
+	SAW_LIM,
+	SAW,
+	NOISE,
+};
+
 struct EnvelopeADSR {
 	double m_attackTime;
 	double m_decayTime;
@@ -88,12 +97,14 @@ private:
 	double m_root;
 	std::atomic<double> m_frequency;
 	EnvelopeADSR m_envelope;
+	WaveForm m_currWaveForm;
+
 	int m_currentKey;
 
 public:
 	SynthEngine();
 
-	double osc(double a_hertz, double a_time, int a_type);
+	double osc(double a_hertz, double a_time, WaveForm a_type);
 	 double makeNoise(double a_time);
 };
 
@@ -105,6 +116,7 @@ SynthEngine::SynthEngine()
 	m_root = std::pow(2.0, 1.0 / 12.0);
 	m_frequency = 440.0;
 	m_currentKey = -1;
+	m_currWaveForm = SAW;
 
 	std::cout << "Starting engine..." << std::endl;
 	
@@ -153,19 +165,19 @@ SynthEngine::SynthEngine()
 	}
 }
 
-double SynthEngine::osc(double a_hertz, double a_time, int a_type) {
+double SynthEngine::osc(double a_hertz, double a_time, WaveForm a_type) {
 	// Avoid large amplitudes with low frequencies
 	switch (a_type) {
-	case 0:
-		// Sine
+	case SINE:
 		return sin(Utility::freqToVel(m_frequency) * a_time);
-	case 1:
-		// Square
+
+	case SQUARE:
 		return (sin(Utility::freqToVel(m_frequency) * a_time)) > 0.0 ? 1.0 : -1.0;
-	case 2:
-		// Triangle
+
+	case TRIANGLE:
 		return asin(sin(Utility::freqToVel(m_frequency) * a_time)) * 2.0 / Utility::pi;
-	case 3: {
+
+	case SAW_LIM: {
 		// Saw (using sum of sine lim inf, soft)
 		double output = 0.0;
 		for (double i = 1.0; i < 100.0; i++) {
@@ -173,20 +185,23 @@ double SynthEngine::osc(double a_hertz, double a_time, int a_type) {
 		}
 		return output * (2.0 / Utility::pi);
 	}
-	case 4:
+
+	case SAW:
 		// Saw (using mod)
 		return (2.0 / Utility::pi) * (a_hertz * Utility::pi * std::fmod(a_time, 1.0 / a_hertz) - (Utility::pi / 2.0));
-	case 5:
-		// Rand Noise
+
+	case NOISE:
 		return Utility::randomDouble(); // freq does not affect... so plays constantly
+
 	default:
 		return 0.0;
 	}
 }
 
 double SynthEngine::makeNoise(double a_time) {
-	int index = 3;
-	double output = osc(m_frequency, a_time, index) * m_envelope.getAmp(a_time);
+	double output = m_envelope.getAmp(a_time) * (
+		1.0 + osc(m_frequency, a_time, m_currWaveForm)
+	);
 	double threshold = 1.0;
 	return std::max(std::min(output, threshold), -threshold);
 }
